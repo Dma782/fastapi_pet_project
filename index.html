@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tasks App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .container {
+            width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            flex: 1;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .task {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .task input {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .task-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>📋 Мои задачи</h1>
+
+        <div class="form">
+            <input id="name" placeholder="Название задачи">
+            <input id="description" placeholder="Описание">
+            <button onclick="addTask()">Добавить</button>
+        </div>
+
+        <div id="tasks"></div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000/tasks";
+
+        async function loadTasks() {
+            const res = await fetch(`${API}/get`);
+            const data = await res.json();
+
+            const container = document.getElementById("tasks");
+            container.innerHTML = "";
+
+            data.forEach(task => {
+                const div = document.createElement("div");
+                div.className = "task";
+
+                div.innerHTML = `
+            <b>ID: ${task.id}</b>
+            <input id="name-${task.id}" value="${task.name}">
+            <input id="desc-${task.id}" value="${task.description || ""}">
+            <div class="task-actions">
+                <button onclick="updateTask(${task.id})">Обновить</button>
+            </div>
+        `;
+
+                container.appendChild(div);
+            });
+        }
+
+        async function addTask() {
+            const name = document.getElementById("name").value;
+            const description = document.getElementById("description").value;
+
+            const params = new URLSearchParams();
+            params.append("name", name);
+            params.append("description", description);
+
+            await fetch(`${API}/add`, {
+                method: "POST",
+                body: params
+            });
+
+            document.getElementById("name").value = "";
+            document.getElementById("description").value = "";
+
+            loadTasks();
+        }
+
+        async function updateTask(id) {
+            const name = document.getElementById(`name-${id}`).value;
+            const description = document.getElementById(`desc-${id}`).value;
+
+            await fetch(`${API}/update`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: id,
+                    name: name,
+                    description: description
+                })
+            });
+
+            loadTasks();
+        }
+
+        loadTasks();
+    </script>
+
+</body>
+
+</html>
