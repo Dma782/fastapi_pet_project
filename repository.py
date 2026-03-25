@@ -1,6 +1,6 @@
 from database import async_session_builder, TasksORM
-from schemas import STaskAdd, STask
-from sqlalchemy import select
+from schemas import STaskAdd, STask, STaskUpdate
+from sqlalchemy import select, update
 
 
 class TasksRepository:
@@ -24,3 +24,16 @@ class TasksRepository:
                 STask.model_validate(task_model) for task_model in task_models
             ]
             return task_schemas
+
+    @classmethod
+    async def update(cls, data: STaskUpdate) -> int:
+        async with async_session_builder() as session:
+            query = (
+                update(TasksORM)
+                .where(TasksORM.id == data.id)
+                .values(name=data.name, description=data.description)
+            )
+            await session.execute(query)
+            await session.commit()
+
+            return data.id
